@@ -3,6 +3,7 @@ using BeerCollection.Application.Beers.DTOs;
 using BeerCollection.Domain.Interfaces;
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace BeerCollection.Application.Beers.Queries
 {
@@ -17,17 +18,27 @@ namespace BeerCollection.Application.Beers.Queries
     {
         private readonly IBeerRepository _beerRepository;
         private readonly IMapper _mapper;
+        private readonly ILogger<SearchBeersQueryHandler> _logger;
 
-        public SearchBeersQueryHandler(IBeerRepository beerRepository, IMapper mapper)
+
+        public SearchBeersQueryHandler(IBeerRepository beerRepository, IMapper mapper, ILogger<SearchBeersQueryHandler> logger)
         {
             _beerRepository = beerRepository;
             _mapper = mapper;
+            _logger = logger;
         }
 
+        // Handler
         public async Task<IEnumerable<BeerDto>> Handle(SearchBeersQuery request, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Searching beers with query: {Query}", request.SearchTerm);
+
             var beers = await _beerRepository.SearchByNameAsync(request.SearchTerm);
-            return _mapper.Map<IEnumerable<BeerDto>>(beers);
+            var result = _mapper.Map<IEnumerable<BeerDto>>(beers);
+
+            _logger.LogInformation("Found {Count} matching beers", beers.ToList().Count);
+
+            return result;
         }
     }
 

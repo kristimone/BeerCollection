@@ -3,6 +3,7 @@ using BeerCollection.Domain.Entities;
 using BeerCollection.Domain.Interfaces;
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace BeerCollection.Application.Beers.Commands
 {
@@ -19,17 +20,24 @@ namespace BeerCollection.Application.Beers.Commands
     {
         private readonly IBeerRepository _beerRepository;
         private readonly IMapper _mapper;
+        private readonly ILogger<CreateBeerCommandHandler> _logger;
 
-        public CreateBeerCommandHandler(IBeerRepository beerRepository, IMapper mapper)
+        public CreateBeerCommandHandler(IBeerRepository beerRepository, IMapper mapper, ILogger<CreateBeerCommandHandler> logger)
         {
             _beerRepository = beerRepository;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<Guid> Handle(CreateBeerCommand request, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Handling CreateBeerCommand for beer: {Name}, {Type}", request.Name, request.Type);
+            
             var beer = _mapper.Map<Beer>(request);
             await _beerRepository.AddAsync(beer);
+           
+            _logger.LogInformation("Beer created with ID: {Id}", beer.Id);
+           
             return beer.Id;
         }
     }

@@ -1,6 +1,7 @@
 ﻿using BeerCollection.Domain.Interfaces;
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace BeerCollection.Application.Beers.Commands
 {
@@ -15,15 +16,29 @@ namespace BeerCollection.Application.Beers.Commands
     public class UpdateBeerRatingCommandHandler : IRequestHandler<UpdateBeerRatingCommand, bool>
     {
         private readonly IBeerRepository _beerRepository;
+        private readonly ILogger<UpdateBeerRatingCommandHandler> _logger;
 
-        public UpdateBeerRatingCommandHandler(IBeerRepository beerRepository)
+        public UpdateBeerRatingCommandHandler(IBeerRepository beerRepository, ILogger<UpdateBeerRatingCommandHandler> logger)
         {
             _beerRepository = beerRepository;
+            _logger = logger;
         }
 
         public async Task<bool> Handle(UpdateBeerRatingCommand request, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Updating rating for beer ID: {BeerId} with rating: {Rating}", request.BeerId,
+                request.NewRating);
+
+            var beer = await _beerRepository.GetByIdAsync(request.BeerId);
+            if (beer == null)
+            {
+                _logger.LogWarning("Beer not found with ID: {BeerId}", request.BeerId);
+                return false;
+            }
+
             var success = await _beerRepository.AddRatingAsync(request.BeerId, request.NewRating);
+
+            _logger.LogInformation("Updated rating for beer ID: {BeerId}", beer.Id);
             return success;
         }
     }

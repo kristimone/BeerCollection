@@ -2,6 +2,7 @@
 using MediatR;
 using AutoMapper;
 using BeerCollection.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace BeerCollection.Application.Beers.Queries
 {
@@ -11,17 +12,25 @@ namespace BeerCollection.Application.Beers.Queries
     {
         private readonly IBeerRepository _beerRepository;
         private readonly IMapper _mapper;
+        private readonly ILogger<GetAllBeersQueryHandler> _logger;
 
-        public GetAllBeersQueryHandler(IBeerRepository beerRepository, IMapper mapper)
+        public GetAllBeersQueryHandler(IBeerRepository beerRepository, IMapper mapper, ILogger<GetAllBeersQueryHandler> logger)
         {
             _beerRepository = beerRepository;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<BeerDto>> Handle(GetAllBeersQuery request, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Handling GetAllBeersQuery");
+
             var beers = await _beerRepository.GetAllAsync();
-            return _mapper.Map<IEnumerable<BeerDto>>(beers);
+            var result = _mapper.Map<IEnumerable<BeerDto>>(beers);
+
+            _logger.LogInformation("Retrieved {Count} beers", result.ToList().Count );
+
+            return result;
         }
     }
 }
